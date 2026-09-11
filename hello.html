@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetailPOS Solutions | Hardware Activation</title>
+    <style>
+        :root {
+            --primary: #0071e3;
+            --dark: #1d1d1f;
+            --light: #f5f5f7;
+            --gray: #86868b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            width: 100%;
+            background-color: var(--dark);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 800px;
+            width: 90%;
+            margin: 40px auto;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        h2 { margin-top: 0; color: var(--dark); }
+        p { color: var(--gray); line-height: 1.5; }
+        .price-tag {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin: 15px 0;
+        }
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover { background-color: #0077ed; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .license-box {
+            background: #e8e8ed;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            word-break: break-all;
+            margin-top: 15px;
+            display: none;
+            border: 1px solid #d2d2d7;
+            color: #1d1d1f;
+        }
+    </style>
+    <!-- Include CryptoJS to perform the signature math on the static site -->
+    <script src="https://cloudflare.com"></script>
+</head>
+<body>
+
+    <header>
+        RetailPOS Solutions OS Deployment Gateway
+    </header>
+
+    <div class="container">
+        <!-- Step 1: Pricing Presentation -->
+        <div class="card">
+            <h2>Step 1: Purchase Your Commercial POS Licence</h2>
+            <p>Unlock premium, secure cash-register functionality for your customized Raspberry Pi Zero 2 W hardware layer. Our compiled C++ engine optimizes your retail environment.</p>
+            <div class="price-tag">$10 AUD <span style="font-size: 1rem; font-weight: normal; color: var(--gray);">/ per device activation</span></div>
+            <!-- Swap this dummy link out for your actual Stripe checkout URL later -->
+            <a href="https://stripe.com" target="_blank" class="btn">Purchase License Slot</a>
+        </div>
+
+        <!-- Step 2: Hashing Generator Tool -->
+        <div class="card">
+            <h2>Step 2: Generate Device Activation File</h2>
+            <p>After successful checkout, enter your Stripe billing details along with your physical Pi's hardware serial number to compile your unique activation token.</p>
+            
+            <div class="form-group">
+                <label for="invoiceId">Stripe Invoice / Order ID</label>
+                <input type="text" id="invoiceId" placeholder="e.g., inv_123456789">
+            </div>
+
+            <div class="form-group">
+                <label for="piSerial">Raspberry Pi CPU Serial Number</label>
+                <input type="text" id="piSerial" placeholder="e.g., 000000001a2b3c4d">
+            </div>
+
+            <button class="btn" onclick="generateActivationKey()">Generate License File</button>
+
+            <div id="licenseWrapper" style="display: none; margin-top: 20px;">
+                <h3>Your Activation Key Token:</h3>
+                <p>Copy the string below exactly and paste it into a file named <code>license.key</code> inside your execution build path on the device.</p>
+                <div id="licenseDisplay" class="license-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateActivationKey() {
+            const invoice = document.getElementById('invoiceId').value.trim();
+            const serial = document.getElementById('piSerial').value.trim();
+
+            if (!invoice || !serial) {
+                alert('Please complete both fields to continue verification.');
+                return;
+            }
+
+            // Ensure this secret matches your C++ main.cpp code exactly!
+            const secretSalt = "RETAIL_POS_SECRET_CRYPTOGRAPHIC_SALT_2026";
+
+            const payload = `PAID:${invoice}:HARDWARE:${serial}`;
+            const hash = CryptoJS.HmacSHA256(payload, secretSalt).toString();
+            const finalKeyFileContent = `${payload}|SIG:${hash}`;
+
+            // Make it a clean string using base64 for easy copy/paste onto the Pi
+            document.getElementById('licenseWrapper').style.display = 'block';
+            const display = document.getElementById('licenseDisplay');
+            display.innerText = btoa(finalKeyFileContent);
+            display.style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>
