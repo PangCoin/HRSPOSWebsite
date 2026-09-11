@@ -94,6 +94,7 @@
             display: none;
             border: 1px solid #d2d2d7;
             color: #1d1d1f;
+            user-select: all; /* Allows clicking once to highlight everything */
         }
     </style>
     <script src="https://cloudflare.com"></script>
@@ -132,9 +133,9 @@
 
             <div id="licenseWrapper" style="display: none; margin-top: 20px;">
                 <h3>Your Activation Key is Ready!</h3>
-                <p>Click the button below to download your key file, or copy the string inside the container text block manually.</p>
+                <p>Try clicking the green button to download the file. If your browser blocks it, simply <strong>triple-click the grey text box below</strong>, copy the text, and paste it into a file named <code>license.key</code> manually.</p>
                 
-                <!-- This real visible hyperlink anchor bypasses modern browser security blocks -->
+                <!-- Data URI format completely bypasses Blob memory security checks -->
                 <a id="downloadBtn" class="btn btn-success" download="license.key">Download license.key</a>
                 
                 <div id="licenseDisplay" class="license-box"></div>
@@ -157,22 +158,19 @@
             const hash = CryptoJS.HmacSHA256(payload, secretSalt).toString();
             const finalKeyFileContent = `${payload}|SIG:${hash}`;
 
-            // Convert to clean Base64 encoding string
+            // Convert token string to Base64
             const base64Token = btoa(finalKeyFileContent);
 
-            // Display UI elements container blocks
+            // Display UI elements
             document.getElementById('licenseWrapper').style.display = 'block';
             
             const display = document.getElementById('licenseDisplay');
             display.innerText = base64Token;
             display.style.display = 'block';
 
-            // Convert token string data into an accessible browser memory URI download payload
-            const blob = new Blob([base64Token], { type: 'text/plain' });
+            // Using Data URI framework to completely bypass strict browser blob blocks
             const downloadLinkElement = document.getElementById('downloadBtn');
-            
-            // Map data streams straight to our visible download button layout
-            downloadLinkElement.href = window.URL.createObjectURL(blob);
+            downloadLinkElement.href = "data:text/plain;base64," + btoa(base64Token);
         }
     </script>
 
