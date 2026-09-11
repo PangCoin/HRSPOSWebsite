@@ -61,8 +61,11 @@
             font-weight: 600;
             text-decoration: none;
             display: inline-block;
+            margin-top: 10px;
         }
         .btn:hover { background-color: #0077ed; }
+        .btn-success { background-color: #34c759; }
+        .btn-success:hover { background-color: #2cd050; }
         .form-group {
             margin-bottom: 15px;
         }
@@ -92,7 +95,6 @@
             color: #1d1d1f;
         }
     </style>
-    <!-- Include CryptoJS to perform the signature math on the static site -->
     <script src="https://cloudflare.com"></script>
 </head>
 <body>
@@ -107,7 +109,6 @@
             <h2>Step 1: Purchase Your Commercial POS Licence</h2>
             <p>Unlock premium, secure cash-register functionality for your customized Raspberry Pi Zero 2 W hardware layer. Our compiled C++ engine optimizes your retail environment.</p>
             <div class="price-tag">$10 AUD <span style="font-size: 1rem; font-weight: normal; color: var(--gray);">/ per device activation</span></div>
-            <!-- Swap this dummy link out for your actual Stripe checkout URL later -->
             <a href="https://stripe.com" target="_blank" class="btn">Purchase License Slot</a>
         </div>
 
@@ -126,17 +127,23 @@
                 <input type="text" id="piSerial" placeholder="e.g., 000000001a2b3c4d">
             </div>
 
-            <button class="btn" onclick="generateActivationKey()">Generate License File</button>
+            <button class="btn" onclick="generateActivationKey()">Generate License Key</button>
 
             <div id="licenseWrapper" style="display: none; margin-top: 20px;">
-                <h3>Your Activation Key Token:</h3>
-                <p>Copy the string below exactly and paste it into a file named <code>license.key</code> inside your execution build path on the device.</p>
+                <h3>Your Activation Key is Ready!</h3>
+                <p>Click the button below to download your <code>license.key</code> file, then copy it into your build folder or onto the root of your SD card image.</p>
+                
+                <button class="btn btn-success" onclick="downloadLicenseFile()">Download license.key</button>
+                
                 <div id="licenseDisplay" class="license-box"></div>
             </div>
         </div>
     </div>
 
     <script>
+        // Global variable to hold the string token
+        let generatedTokenBase64 = "";
+
         function generateActivationKey() {
             const invoice = document.getElementById('invoiceId').value.trim();
             const serial = document.getElementById('piSerial').value.trim();
@@ -146,18 +153,36 @@
                 return;
             }
 
-            // Ensure this secret matches your C++ main.cpp code exactly!
             const secretSalt = "RETAIL_POS_SECRET_CRYPTOGRAPHIC_SALT_2026";
-
             const payload = `PAID:${invoice}:HARDWARE:${serial}`;
             const hash = CryptoJS.HmacSHA256(payload, secretSalt).toString();
             const finalKeyFileContent = `${payload}|SIG:${hash}`;
 
-            // Make it a clean string using base64 for easy copy/paste onto the Pi
+            // Convert to Base64
+            generatedTokenBase64 = btoa(finalKeyFileContent);
+
+            // Display UI components
             document.getElementById('licenseWrapper').style.display = 'block';
             const display = document.getElementById('licenseDisplay');
-            display.innerText = btoa(finalKeyFileContent);
+            display.innerText = generatedTokenBase64;
             display.style.display = 'block';
+        }
+
+        // New function to handle downloading the key as a real file
+        function downloadLicenseFile() {
+            if (!generatedTokenBase64) return;
+
+            // Create a virtual file download link in browser memory
+            const blob = new Blob([generatedTokenBase64], { type: 'text/plain' });
+            const link = document.createElement('a');
+            
+            link.download = 'license.key'; // Enforce the exact filename your C++ looks for
+            link.href = window.URL.createObjectURL(blob);
+            
+            // Trigger the download automatically
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 
